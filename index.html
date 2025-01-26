@@ -1,38 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="This page is currently under development.">
-    <title>Under Development</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        .container {
-            text-align: center;
-        }
-        h1 {
-            font-size: 2.5rem;
-            color: #ff6347;
-        }
-        p {
-            font-size: 1.2rem;
-            color: #555;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+    }
+    .hidden {
+      display: none;
+    }
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      opacity: 0.7;
+      border-radius: 50%;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-100%) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
+    }
+    button {
+      padding: 10px 20px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Under Development</h1>
-        <p>We are working hard to make this page available. Stay tuned!</p>
-    </div>
+  <div id="game-container" class="card">
+    <h1 id="title">Memory Game</h1>
+    <div id="content"></div>
+    <button id="action-btn">Start Game</button>
+  </div>
+
+  <script>
+    const state = {
+      level: 1,
+      pin: "",
+      pattern: "",
+      userInput: "",
+      stage: "start",
+    };
+
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const numbers = "0123456789";
+
+    // Utility Functions
+    const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
+    const generatePattern = () => {
+      let pattern = "";
+      for (let i = 0; i < 6; i++) {
+        const isLetter = Math.random() > 0.5;
+        pattern += isLetter ? letters[Math.floor(Math.random() * letters.length)] : numbers[Math.floor(Math.random() * numbers.length)];
+      }
+      return pattern;
+    };
+
+    const startLevel = () => {
+      state.pin = generatePin();
+      state.pattern = generatePattern();
+      state.stage = "memorize-pin";
+      render();
+    };
+
+    const checkInput = () => {
+      if (state.stage === "recall-pin" && state.userInput === state.pin) {
+        alert("Correct PIN! Now memorize the pattern.");
+        state.stage = "memorize-pattern";
+        render();
+      } else if (state.stage === "recall-pattern" && state.userInput === state.pattern) {
+        alert("Correct Pattern! Level Up!");
+        state.level++;
+        startLevel();
+      } else {
+        alert("Incorrect! Game Over!");
+        state.level = 1;
+        startLevel();
+      }
+    };
+
+    const render = () => {
+      const title = document.getElementById("title");
+      const content = document.getElementById("content");
+      const actionBtn = document.getElementById("action-btn");
+
+      if (state.stage === "start") {
+        title.textContent = "Memory Game";
+        content.innerHTML = `<p>Test your memory skills!</p>`;
+        actionBtn.textContent = "Start Game";
+      } else if (state.stage === "memorize-pin") {
+        title.textContent = `Level ${state.level}: Memorize the PIN`;
+        content.innerHTML = `<p class="pin">${state.pin}</p>`;
+        actionBtn.textContent = "I've Memorized the PIN";
+        actionBtn.onclick = () => {
+          state.stage = "recall-pin";
+          render();
+        };
+      } else if (state.stage === "recall-pin") {
+        title.textContent = "Recall the PIN";
+        content.innerHTML = `<input type="text" id="user-input" maxlength="4" placeholder="Enter PIN">`;
+        actionBtn.textContent = "Submit PIN";
+        actionBtn.onclick = () => {
+          state.userInput = document.getElementById("user-input").value;
+          checkInput();
+        };
+      } else if (state.stage === "memorize-pattern") {
+        title.textContent = `Level ${state.level}: Memorize the Pattern`;
+        content.innerHTML = `<p class="pattern">${state.pattern}</p>`;
+        actionBtn.textContent = "I've Memorized the Pattern";
+        actionBtn.onclick = () => {
+          state.stage = "recall-pattern";
+          render();
+        };
+      } else if (state.stage === "recall-pattern") {
+        title.textContent = "Recall the Pattern";
+        content.innerHTML = `<input type="text" id="user-input" maxlength="6" placeholder="Enter Pattern">`;
+        actionBtn.textContent = "Submit Pattern";
+        actionBtn.onclick = () => {
+          state.userInput = document.getElementById("user-input").value;
+          checkInput();
+        };
+      }
+    };
+
+    document.getElementById("action-btn").onclick = startLevel;
+  </script>
 </body>
 </html>
