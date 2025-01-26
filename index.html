@@ -4,231 +4,181 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memory Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to bottom, #3498db, #2c3e50);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    @keyframes fall {
+      0% {
+        transform: translateY(-100vh);
+      }
+      100% {
+        transform: translateY(100vh);
+      }
     }
-    .container {
-      width: 300px;
-      background: #ecf0f1;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      text-align: center;
-      padding: 20px;
+
+    .animate-fall {
+      animation: fall linear infinite;
     }
-    h1 {
-      font-size: 24px;
-      color: #2c3e50;
-    }
-    p {
-      font-size: 14px;
-      color: #7f8c8d;
-      margin: 10px 0;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 2px solid #bdc3c7;
-      border-radius: 4px;
-      font-size: 16px;
-      text-align: center;
-    }
-    input:focus {
-      outline: none;
-      border-color: #2980b9;
-    }
-    button {
-      background: #2980b9;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 16px;
-    }
-    button:hover {
-      background: #3498db;
-    }
-    .modal {
+
+    .confetti {
       position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: var(--confetti-color, #FFD700);
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      visibility: hidden;
-      opacity: 0;
-      transition: visibility 0.3s, opacity 0.3s;
-    }
-    .modal.active {
-      visibility: visible;
-      opacity: 1;
-    }
-    .modal-content {
-      background: #ecf0f1;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      width: 80%;
-      max-width: 300px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .modal-content h2 {
-      margin: 0 0 10px;
-      color: #2c3e50;
-    }
-    .modal-content p {
-      font-size: 14px;
-      color: #7f8c8d;
-    }
-    .modal-content button {
-      background: #2980b9;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-    .modal-content button:hover {
-      background: #3498db;
+      border-radius: 50%;
+      animation: fall 3s linear infinite;
+      pointer-events: none;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1 id="title">Memory Game</h1>
-    <div id="content"></div>
-    <button id="action-btn">Start Game</button>
-  </div>
-
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <h2 id="modal-title"></h2>
-      <p id="modal-message"></p>
-      <button id="modal-btn">OK</button>
-    </div>
-  </div>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <div id="app" class="w-full max-w-md mx-auto"></div>
 
   <script>
-    const state = {
-      level: 1,
-      pin: "",
-      pattern: "",
-      userInput: "",
-      stage: "start",
-    };
+    const app = document.getElementById('app');
 
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const numbers = "0123456789";
+    let currentLevel = 1;
+    let pin = '';
+    let pattern = '';
 
-    const modal = document.getElementById("modal");
-    const modalTitle = document.getElementById("modal-title");
-    const modalMessage = document.getElementById("modal-message");
-    const modalBtn = document.getElementById("modal-btn");
-
-    // Utility Functions
     const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
+
     const generatePattern = () => {
-      let pattern = "";
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      let pattern = '';
       for (let i = 0; i < 6; i++) {
         const isLetter = Math.random() > 0.5;
-        pattern += isLetter ? letters[Math.floor(Math.random() * letters.length)] : numbers[Math.floor(Math.random() * numbers.length)];
+        if (isLetter) {
+          pattern += letters[Math.floor(Math.random() * letters.length)];
+        } else {
+          pattern += numbers[Math.floor(Math.random() * numbers.length)];
+        }
       }
       return pattern;
     };
 
+    const createConfetti = () => {
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        confetti.style.setProperty('--confetti-color', `hsl(${Math.random() * 360}, 100%, 50%)`);
+        confetti.style.left = `${Math.random() * 100}vw`;
+        confetti.style.animationDuration = `${2 + Math.random() * 3}s`;
+        confetti.style.opacity = Math.random();
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 5000);
+      }
+    };
+
     const startLevel = () => {
-      state.pin = generatePin();
-      state.pattern = generatePattern();
-      state.stage = "memorize-pin";
-      render();
+      pin = generatePin();
+      pattern = generatePattern();
+      showMemorizePin();
     };
 
-    const checkInput = () => {
-      if (state.stage === "recall-pin" && state.userInput === state.pin) {
-        showModal("Correct!", "You remembered the PIN! Now memorize the pattern.");
-        state.stage = "memorize-pattern";
-        render();
-      } else if (state.stage === "recall-pattern" && state.userInput === state.pattern) {
-        showModal("Correct!", "You remembered the pattern! Level up!");
-        state.level++;
-        startLevel();
+    const showMemorizePin = () => {
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-2xl font-bold mb-4">Level ${currentLevel}: Memorize PIN</h2>
+          <div class="text-6xl text-blue-600 font-bold tracking-widest mb-4">${pin}</div>
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="showRecallPin()">
+            I've Memorized the PIN
+          </button>
+        </div>
+      `;
+    };
+
+    const showRecallPin = () => {
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-2xl font-bold mb-4">Recall the PIN</h2>
+          <input type="text" id="userPin" maxlength="4" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter PIN" />
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="checkPin()">
+            Submit PIN
+          </button>
+        </div>
+      `;
+    };
+
+    const checkPin = () => {
+      const userPin = document.getElementById('userPin').value;
+      if (userPin === pin) {
+        showMemorizePattern();
       } else {
-        showModal("Incorrect!", "Game over! Try again.");
-        state.level = 1;
-        startLevel();
+        app.innerHTML = `
+          <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+            <h2 class="text-2xl font-bold text-red-600 mb-4">Game Over</h2>
+            <p class="text-xl mb-4">The correct PIN was ${pin}.</p>
+            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full" onclick="startLevel()">
+              Restart Game
+            </button>
+          </div>
+        `;
       }
     };
 
-    const showModal = (title, message) => {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modal.classList.add("active");
+    const showMemorizePattern = () => {
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-2xl font-bold mb-4">Level ${currentLevel}: Memorize Pattern</h2>
+          <div class="text-4xl text-purple-600 font-bold tracking-widest mb-4">${pattern}</div>
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="showRecallPattern()">
+            I've Memorized the Pattern
+          </button>
+        </div>
+      `;
     };
 
-    const render = () => {
-      const title = document.getElementById("title");
-      const content = document.getElementById("content");
-      const actionBtn = document.getElementById("action-btn");
+    const showRecallPattern = () => {
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-2xl font-bold mb-4">Recall the Pattern</h2>
+          <input type="text" id="userPattern" maxlength="6" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter Pattern" />
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="checkPattern()">
+            Submit Pattern
+          </button>
+        </div>
+      `;
+    };
 
-      if (state.stage === "start") {
-        title.textContent = "Memory Game";
-        content.innerHTML = `<p>Test your memory skills!</p>`;
-        actionBtn.textContent = "Start Game";
-      } else if (state.stage === "memorize-pin") {
-        title.textContent = `Level ${state.level}: Memorize the PIN`;
-        content.innerHTML = `<p>${state.pin}</p>`;
-        actionBtn.textContent = "I've Memorized the PIN";
-        actionBtn.onclick = () => {
-          state.stage = "recall-pin";
-          render();
-        };
-      } else if (state.stage === "recall-pin") {
-        title.textContent = "Recall the PIN";
-        content.innerHTML = `<input type="text" id="user-input" maxlength="4" placeholder="Enter PIN">`;
-        actionBtn.textContent = "Submit PIN";
-        actionBtn.onclick = () => {
-          state.userInput = document.getElementById("user-input").value;
-          checkInput();
-        };
-      } else if (state.stage === "memorize-pattern") {
-        title.textContent = `Level ${state.level}: Memorize the Pattern`;
-        content.innerHTML = `<p>${state.pattern}</p>`;
-        actionBtn.textContent = "I've Memorized the Pattern";
-        actionBtn.onclick = () => {
-          state.stage = "recall-pattern";
-          render();
-        };
-      } else if (state.stage === "recall-pattern") {
-        title.textContent = "Recall the Pattern";
-        content.innerHTML = `<input type="text" id="user-input" maxlength="6" placeholder="Enter Pattern">`;
-        actionBtn.textContent = "Submit Pattern";
-        actionBtn.onclick = () => {
-          state.userInput = document.getElementById("user-input").value;
-          checkInput();
-        };
+    const checkPattern = () => {
+      const userPattern = document.getElementById('userPattern').value;
+      if (userPattern === pattern) {
+        showCongratulations();
+      } else {
+        app.innerHTML = `
+          <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+            <h2 class="text-2xl font-bold text-red-600 mb-4">Game Over</h2>
+            <p class="text-xl mb-4">The correct Pattern was ${pattern}.</p>
+            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full" onclick="startLevel()">
+              Restart Game
+            </button>
+          </div>
+        `;
       }
     };
 
-    modalBtn.onclick = () => {
-      modal.classList.remove("active");
+    const showCongratulations = () => {
+      createConfetti();
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-3xl font-bold text-green-600 mb-4">Congratulations!</h2>
+          <p class="text-xl mb-4">You've successfully completed Level ${currentLevel}!</p>
+          <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded w-full" onclick="proceedToNextLevel()">
+            Proceed to Next Level
+          </button>
+        </div>
+      `;
     };
 
-    document.getElementById("action-btn").onclick = startLevel;
+    const proceedToNextLevel = () => {
+      currentLevel++;
+      startLevel();
+    };
+
+    startLevel();
   </script>
 </body>
 </html>
