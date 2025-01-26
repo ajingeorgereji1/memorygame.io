@@ -5,55 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memory Game</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #f0f4f8;
+      background: linear-gradient(to bottom, #3498db, #2c3e50);
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
     }
-    .card {
-      background: #ffffff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    .container {
+      width: 300px;
+      background: #ecf0f1;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       text-align: center;
-      width: 100%;
-      max-width: 400px;
+      padding: 20px;
     }
-    .hidden {
-      display: none;
+    h1 {
+      font-size: 24px;
+      color: #2c3e50;
+    }
+    p {
+      font-size: 14px;
+      color: #7f8c8d;
+      margin: 10px 0;
     }
     input {
+      width: 100%;
       padding: 10px;
+      margin: 10px 0;
+      border: 2px solid #bdc3c7;
+      border-radius: 4px;
       font-size: 16px;
-      width: calc(100% - 20px);
-      margin-top: 15px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      text-align: center;
     }
     input:focus {
       outline: none;
-      border-color: #4caf50;
-      box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+      border-color: #2980b9;
     }
     button {
-      padding: 10px 20px;
-      background: #4caf50;
+      background: #2980b9;
       color: white;
+      padding: 10px;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
-      margin-top: 20px;
+      width: 100%;
+      font-size: 16px;
     }
     button:hover {
-      background: #45a049;
+      background: #3498db;
     }
     .modal {
       position: fixed;
@@ -65,43 +67,49 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
-      opacity: 0;
       visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 0;
+      transition: visibility 0.3s, opacity 0.3s;
     }
     .modal.active {
-      opacity: 1;
       visibility: visible;
+      opacity: 1;
     }
     .modal-content {
-      background: #fff;
+      background: #ecf0f1;
       padding: 20px;
-      border-radius: 10px;
+      border-radius: 8px;
       text-align: center;
+      width: 80%;
+      max-width: 300px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     .modal-content h2 {
-      margin-bottom: 10px;
+      margin: 0 0 10px;
+      color: #2c3e50;
     }
     .modal-content p {
-      margin-bottom: 20px;
+      font-size: 14px;
+      color: #7f8c8d;
     }
     .modal-content button {
-      background: #4caf50;
+      background: #2980b9;
       color: white;
+      padding: 10px;
       border: none;
-      border-radius: 5px;
-      padding: 10px 20px;
+      border-radius: 4px;
       cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 10px;
     }
     .modal-content button:hover {
-      background: #45a049;
+      background: #3498db;
     }
   </style>
 </head>
 <body>
-  <div id="game-container" class="card">
+  <div class="container">
     <h1 id="title">Memory Game</h1>
     <div id="content"></div>
     <button id="action-btn">Start Game</button>
@@ -183,7 +191,7 @@
         actionBtn.textContent = "Start Game";
       } else if (state.stage === "memorize-pin") {
         title.textContent = `Level ${state.level}: Memorize the PIN`;
-        content.innerHTML = `<p class="pin">${state.pin}</p>`;
+        content.innerHTML = `<p>${state.pin}</p>`;
         actionBtn.textContent = "I've Memorized the PIN";
         actionBtn.onclick = () => {
           state.stage = "recall-pin";
@@ -199,7 +207,7 @@
         };
       } else if (state.stage === "memorize-pattern") {
         title.textContent = `Level ${state.level}: Memorize the Pattern`;
-        content.innerHTML = `<p class="pattern">${state.pattern}</p>`;
+        content.innerHTML = `<p>${state.pattern}</p>`;
         actionBtn.textContent = "I've Memorized the Pattern";
         actionBtn.onclick = () => {
           state.stage = "recall-pattern";
