@@ -30,6 +30,26 @@
       animation: fall 3s linear infinite;
       pointer-events: none;
     }
+
+    .distraction {
+      position: fixed;
+      top: -50px;
+      left: calc(50% - 25px);
+      width: 50px;
+      height: 50px;
+      background: hsl(var(--hue), 70%, 50%);
+      border-radius: 50%;
+      animation: distraction-move 2s linear infinite;
+    }
+
+    @keyframes distraction-move {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(110vh);
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
@@ -41,22 +61,26 @@
     let currentLevel = 1;
     let pin = '';
     let pattern = '';
+    let score = 0;
+    let timer;
 
-    const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
+    const youtubeVideos = [
+      "dQw4w9WgXcQ",
+      "3JZ_D3ELwOQ",
+      "L_jWHffIx5E",
+      "C0DPdy98e4c",
+      "ZZ5LpwO-An4"
+    ];
+
+    const generatePin = () => {
+      const length = 4 + Math.floor(currentLevel / 2);
+      return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
+    };
 
     const generatePattern = () => {
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const numbers = '0123456789';
-      let pattern = '';
-      for (let i = 0; i < 6; i++) {
-        const isLetter = Math.random() > 0.5;
-        if (isLetter) {
-          pattern += letters[Math.floor(Math.random() * letters.length)];
-        } else {
-          pattern += numbers[Math.floor(Math.random() * numbers.length)];
-        }
-      }
-      return pattern;
+      const length = 6 + Math.floor(currentLevel / 2);
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
     };
 
     const createConfetti = () => {
@@ -72,6 +96,55 @@
       }
     };
 
+    const createDistractions = () => {
+      for (let i = 0; i < 5; i++) {
+        const distraction = document.createElement('div');
+        distraction.classList.add('distraction');
+        distraction.style.setProperty('--hue', `${Math.random() * 360}`);
+        distraction.style.left = `${Math.random() * 100}vw`;
+        document.body.appendChild(distraction);
+        setTimeout(() => distraction.remove(), 3000);
+      }
+    };
+
+    const showYouTubeVideo = (callback) => {
+      const videoId = youtubeVideos[Math.floor(Math.random() * youtubeVideos.length)];
+      app.innerHTML = `
+        <div class="w-full h-full fixed inset-0 bg-black z-50 flex items-center justify-center">
+          <iframe
+            id="youtubePlayer"
+            width="100%"
+            height="100%"
+            src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen
+          ></iframe>
+        </div>
+      `;
+
+      const player = document.getElementById('youtubePlayer');
+      player.addEventListener('load', () => {
+        setTimeout(() => {
+          player.parentElement.remove();
+          callback();
+        }, 15000); // Simulate 15 seconds of playback
+      });
+    };
+
+    const startTimer = (duration, callback) => {
+      const timerEl = document.getElementById('timer');
+      let timeLeft = duration;
+      timer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          callback();
+        }
+      }, 1000);
+    };
+
     const startLevel = () => {
       pin = generatePin();
       pattern = generatePattern();
@@ -79,22 +152,25 @@
     };
 
     const showMemorizePin = () => {
+      createDistractions();
       app.innerHTML = `
         <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
           <h2 class="text-2xl font-bold mb-4">Level ${currentLevel}: Memorize PIN</h2>
+          <div id="timer" class="text-xl text-gray-600 mb-2">10</div>
           <div class="text-6xl text-blue-600 font-bold tracking-widest mb-4">${pin}</div>
-          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="showRecallPin()">
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="() => showYouTubeVideo(showRecallPin)">
             I've Memorized the PIN
           </button>
         </div>
       `;
+      startTimer(10, () => showYouTubeVideo(showRecallPin));
     };
 
     const showRecallPin = () => {
       app.innerHTML = `
         <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
           <h2 class="text-2xl font-bold mb-4">Recall the PIN</h2>
-          <input type="text" id="userPin" maxlength="4" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter PIN" />
+          <input type="text" id="userPin" maxlength="${pin.length}" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter PIN" />
           <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="checkPin()">
             Submit PIN
           </button>
@@ -105,37 +181,33 @@
     const checkPin = () => {
       const userPin = document.getElementById('userPin').value;
       if (userPin === pin) {
+        score += 10;
         showMemorizePattern();
       } else {
-        app.innerHTML = `
-          <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
-            <h2 class="text-2xl font-bold text-red-600 mb-4">Game Over</h2>
-            <p class="text-xl mb-4">The correct PIN was ${pin}.</p>
-            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full" onclick="startLevel()">
-              Restart Game
-            </button>
-          </div>
-        `;
+        gameOver('PIN');
       }
     };
 
     const showMemorizePattern = () => {
+      createDistractions();
       app.innerHTML = `
         <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
           <h2 class="text-2xl font-bold mb-4">Level ${currentLevel}: Memorize Pattern</h2>
+          <div id="timer" class="text-xl text-gray-600 mb-2">15</div>
           <div class="text-4xl text-purple-600 font-bold tracking-widest mb-4">${pattern}</div>
-          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="showRecallPattern()">
+          <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="() => showYouTubeVideo(showRecallPattern)">
             I've Memorized the Pattern
           </button>
         </div>
       `;
+      startTimer(15, () => showYouTubeVideo(showRecallPattern));
     };
 
     const showRecallPattern = () => {
       app.innerHTML = `
         <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
           <h2 class="text-2xl font-bold mb-4">Recall the Pattern</h2>
-          <input type="text" id="userPattern" maxlength="6" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter Pattern" />
+          <input type="text" id="userPattern" maxlength="${pattern.length}" class="w-full text-center text-4xl border-2 p-2 rounded mb-4" placeholder="Enter Pattern" />
           <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full" onclick="checkPattern()">
             Submit Pattern
           </button>
@@ -146,17 +218,10 @@
     const checkPattern = () => {
       const userPattern = document.getElementById('userPattern').value;
       if (userPattern === pattern) {
+        score += 15;
         showCongratulations();
       } else {
-        app.innerHTML = `
-          <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
-            <h2 class="text-2xl font-bold text-red-600 mb-4">Game Over</h2>
-            <p class="text-xl mb-4">The correct Pattern was ${pattern}.</p>
-            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full" onclick="startLevel()">
-              Restart Game
-            </button>
-          </div>
-        `;
+        gameOver('Pattern');
       }
     };
 
@@ -165,7 +230,7 @@
       app.innerHTML = `
         <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
           <h2 class="text-3xl font-bold text-green-600 mb-4">Congratulations!</h2>
-          <p class="text-xl mb-4">You've successfully completed Level ${currentLevel}!</p>
+          <p class="text-xl mb-4">You've successfully completed Level ${currentLevel}! Your score: ${score}</p>
           <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded w-full" onclick="proceedToNextLevel()">
             Proceed to Next Level
           </button>
@@ -173,8 +238,28 @@
       `;
     };
 
+    const gameOver = (failedAt) => {
+      clearInterval(timer);
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center">
+          <h2 class="text-2xl font-bold text-red-600 mb-4">Game Over</h2>
+          <p class="text-xl mb-4">The correct ${failedAt} was ${failedAt === 'PIN' ? pin : pattern}.</p>
+          <p class="text-xl mb-4">Your final score: ${score}</p>
+          <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full" onclick="resetGame()">
+            Restart Game
+          </button>
+        </div>
+      `;
+    };
+
     const proceedToNextLevel = () => {
       currentLevel++;
+      startLevel();
+    };
+
+    const resetGame = () => {
+      currentLevel = 1;
+      score = 0;
       startLevel();
     };
 
